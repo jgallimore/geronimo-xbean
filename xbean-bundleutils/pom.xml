@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.xbean</groupId>
         <artifactId>xbean</artifactId>
-        <version>4.5</version>
+        <version>4.5-TT.1</version>
     </parent>
 
     <artifactId>xbean-bundleutils</artifactId>
@@ -55,7 +55,7 @@
             <id>smx.svn</id>
             <name>Servicemix svn Repository</name>
             <layout>default</layout>
-            <url>http://svn.apache.org/repos/asf/servicemix/m2-repo/</url>
+            <url>https://svn.apache.org/repos/asf/servicemix/m2-repo/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
