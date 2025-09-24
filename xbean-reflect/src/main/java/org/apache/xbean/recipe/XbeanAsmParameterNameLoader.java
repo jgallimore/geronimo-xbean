@@ -17,12 +17,11 @@
  */
 package org.apache.xbean.recipe;
 
-import org.apache.xbean.asm7.ClassReader;
-import org.apache.xbean.asm7.ClassVisitor;
-import org.apache.xbean.asm7.Label;
-import org.apache.xbean.asm7.MethodVisitor;
-import org.apache.xbean.asm7.Opcodes;
-import org.apache.xbean.asm7.Type;
+import org.apache.xbean.asm9.ClassReader;
+import org.apache.xbean.asm9.ClassVisitor;
+import org.apache.xbean.asm9.Label;
+import org.apache.xbean.asm9.MethodVisitor;
+import org.apache.xbean.asm9.Type;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+
+import static org.apache.xbean.asm9.shade.commons.AsmConstants.ASM_VERSION;
 
 /**
  * Implementation of ParameterNameLoader that uses ASM to read the parameter names from the local variable table in the
@@ -220,7 +221,7 @@ public class XbeanAsmParameterNameLoader implements ParameterNameLoader {
         private final Map<String,Constructor> constructorMap = new HashMap<String,Constructor>();
 
         public AllParameterNamesDiscoveringVisitor(Class type, String methodName) {
-            super(Opcodes.ASM7);
+            super(ASM_VERSION);
             this.methodName = methodName;
 
             List<Method> methods = new ArrayList<Method>(Arrays.asList(type.getMethods()));
@@ -233,7 +234,7 @@ public class XbeanAsmParameterNameLoader implements ParameterNameLoader {
         }
 
         public AllParameterNamesDiscoveringVisitor(Class type) {
-            super(Opcodes.ASM7);
+            super(ASM_VERSION);
             this.methodName = "<init>";
 
             List<Constructor> constructors = new ArrayList<Constructor>(Arrays.asList(type.getConstructors()));
@@ -293,7 +294,7 @@ public class XbeanAsmParameterNameLoader implements ParameterNameLoader {
                     isStaticMethod = Modifier.isStatic(method.getModifiers());
                 }
 
-                return new MethodVisitor(Opcodes.ASM7) {
+                return new MethodVisitor(ASM_VERSION) {
                     // assume static method until we get a first parameter name
                     public void visitLocalVariable(String name, String description, String signature, Label start, Label end, int index) {
                         if (isStaticMethod) {

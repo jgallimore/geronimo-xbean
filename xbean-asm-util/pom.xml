@@ -21,7 +21,7 @@
   <parent>
     <artifactId>xbean</artifactId>
     <groupId>org.apache.xbean</groupId>
-    <version>4.15-SNAPSHOT</version>
+    <version>4.28-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -30,7 +30,7 @@
   <name>Apache XBean :: ASM Util</name>
 
   <properties>
-    <xbean.automatic.module.name>${project.groupId}.asm7.util</xbean.automatic.module.name>
+    <xbean.automatic.module.name>${project.groupId}.asm9.util</xbean.automatic.module.name>
   </properties>
 
   <dependencies>

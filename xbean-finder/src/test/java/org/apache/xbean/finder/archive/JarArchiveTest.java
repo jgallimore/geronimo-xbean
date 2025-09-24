@@ -19,21 +19,30 @@ package org.apache.xbean.finder.archive;
 import org.acme.foo.Blue;
 import org.acme.foo.Green;
 import org.acme.foo.Red;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
+import static java.util.Collections.singletonList;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
+import static org.apache.xbean.finder.archive.Archives.putClasses;
 
 /**
  * @version $Rev$ $Date$
@@ -43,6 +52,10 @@ public class JarArchiveTest {
     private static final Class[] classes = {Blue.class, Blue.Navy.class, Blue.Sky.class, Green.class, Green.Emerald.class, Red.class, Red.CandyApple.class, Red.Pink.class};
     private static File classpath;
     private JarArchive archive;
+
+    @Rule
+    public final TemporaryFolder testTmpDir = new TemporaryFolder();
+
 
     @BeforeClass
     public static void classSetUp() throws Exception {
@@ -90,10 +103,7 @@ public class JarArchiveTest {
 
     @Test
     public void testIterator() throws Exception {
-        List<String> actual = new ArrayList<String>();
-        for (Archive.Entry entry : archive) {
-            actual.add(entry.getName());
-        }
+        List<String> actual = list(archive);
 
         assertFalse(0 == actual.size());
 
@@ -104,5 +114,125 @@ public class JarArchiveTest {
         assertEquals(classes.length, actual.size());
     }
 
+    @Test
+    public void testXBEAN337() throws Exception {
 
+
+        // Virtual path
+
+        String path = "/this!/!file!/does!/!not/exist.jar";
+        URL[] urls = {new URL("jar:file:" + path + "!/some!/!inner!/.jar!/file.jar")};
+
+        try(JarArchive jar = new JarArchive(new URLClassLoader(urls), urls[0])){
+
+        }catch(Exception ex){
+            Assert.assertTrue(String.format(
+                    "Muzz never fail on '/this', but try full path with exclamations('%s') instead",
+                    path),
+                    ex.getCause().getMessage().contains("exist.jar"));
+        }
+
+
+        // Real file
+
+        File tmpDir = testTmpDir.newFolder("!" + JarArchiveTest.class.getSimpleName() + "!-temp!");
+
+        File exclamated = Files.copy(JarArchiveTest.classpath.toPath(),
+                tmpDir.toPath().resolve(
+                        JarArchiveTest.classpath.getName()))
+                .toFile();
+
+        urls[0] = new URL("jar:" + exclamated.toURI().toURL() + "!/");
+
+        try(JarArchive jar = new JarArchive(new URLClassLoader(urls), urls[0])){
+
+            Assert.assertEquals(String.format("Muzz successfully open '%s'", exclamated.getAbsolutePath()),
+                    this.archive.iterator().hasNext(),
+                    jar.iterator().hasNext());
+        }
+
+
+        // Unsupported protocols stack
+
+        urls[0] = new URL("http:ftp:jar:" + exclamated.toURI().toURL() + "!/");
+
+        try(JarArchive jar = new JarArchive(new URLClassLoader(urls), urls[0])){
+            Assert.fail(String.format("Muzz eat only local file URLs:"
+                    + " 'file:/...' or 'jar:file:/...!/' but not '%s'",
+                    urls[0]));
+        } catch (UnsupportedOperationException | IllegalArgumentException ex) {
+
+        }
+    }
+
+    @Test
+    public void exclamationMarkInFilename() throws Exception {
+        createAndAssertBlueArchive(testTmpDir.newFile("foo!bar.jar"));
+    }
+
+    @Test
+    public void exclamationMarkAsResourceSep() throws Exception {
+        createAndAssertBlueArchive(new File(testTmpDir.newFolder("foo!"), "the-file.jar"));
+    }
+
+    @Test
+    public void exclamationMarkInFilePath() throws Exception {
+        createAndAssertBlueArchive(new File(testTmpDir.newFolder("foo!bar"), "the-file.jar"));
+    }
+
+    @Test
+    public void exclamationMarkInResource() throws Exception {
+        final File file = testTmpDir.newFile("file.jar");
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        try (final JarOutputStream out = new JarOutputStream(Files.newOutputStream(file.toPath()))) {
+            putClasses(loader, out, new Class<?>[]{Blue.class});
+            out.putNextEntry(new JarEntry("foo!/bar.marker"));
+            out.write("Just a marker to find the file for ex".getBytes(StandardCharsets.UTF_8));
+            out.closeEntry();
+        }
+
+        try (
+                final URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{file.toURI().toURL()});
+                final JarArchive jar = new JarArchive(
+                        loader, urlClassLoader.getResource("foo!/bar.marker"))) {
+            assertEquals(singletonList("org.acme.foo.Blue"), list(jar));
+        }
+    }
+
+    private List<String> list(final JarArchive archive) {
+        final List<String> actual = new ArrayList<>();
+        for (final Archive.Entry entry : archive) {
+            actual.add(entry.getName());
+        }
+        return actual;
+    }
+
+    private void createAndAssertBlueArchive(final File file) throws Exception {
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        try (final JarOutputStream out = new JarOutputStream(Files.newOutputStream(file.toPath()))) {
+            putClasses(loader, out, new Class<?>[]{Blue.class});
+        }
+
+        final URL url = file.toURI().toURL();
+        // file:...
+        try (final JarArchive jar = new JarArchive(loader, url)) {
+            assertEquals(singletonList("org.acme.foo.Blue"), list(jar));
+        }
+        // file:... with marker with exclamation mark - this one is highly unlikely
+        try (final JarArchive jar = new JarArchive(loader, url)) {
+            assertEquals(singletonList("org.acme.foo.Blue"), list(jar));
+        }
+        // no resource
+        try (final JarArchive jar = new JarArchive(loader, new URL("jar", null, -1, url.toExternalForm()))) {
+            assertEquals(singletonList("org.acme.foo.Blue"), list(jar));
+        }
+        // resource
+        try (final JarArchive jar = new JarArchive(loader, new URL("jar", null, -1, url.toExternalForm() + "!/whatever"))) {
+            assertEquals(singletonList("org.acme.foo.Blue"), list(jar));
+        }
+        // resource with exclamation mark
+        try (final JarArchive jar = new JarArchive(loader, new URL("jar", null, -1, url.toExternalForm() + "!/whatever/is!/the!/marker"))) {
+            assertEquals(singletonList("org.acme.foo.Blue"), list(jar));
+        }
+    }
 }

@@ -21,7 +21,6 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.io.IOException;
@@ -36,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+
+import static org.apache.xbean.asm9.original.commons.AsmConstants.ASM_VERSION;
 
 /**
  * Implementation of ParameterNameLoader that uses ASM to read the parameter names from the local variable table in the
@@ -220,7 +221,7 @@ public class AsmParameterNameLoader implements ParameterNameLoader {
         private final Map<String,Constructor> constructorMap = new HashMap<String,Constructor>();
 
         public AllParameterNamesDiscoveringVisitor(Class type, String methodName) {
-            super(Opcodes.ASM7);
+            super(ASM_VERSION);
             this.methodName = methodName;
 
             List<Method> methods = new ArrayList<Method>(Arrays.asList(type.getMethods()));
@@ -233,7 +234,7 @@ public class AsmParameterNameLoader implements ParameterNameLoader {
         }
 
         public AllParameterNamesDiscoveringVisitor(Class type) {
-            super(Opcodes.ASM7);
+            super(ASM_VERSION);
             this.methodName = "<init>";
 
             List<Constructor> constructors = new ArrayList<Constructor>(Arrays.asList(type.getConstructors()));
@@ -288,7 +289,7 @@ public class AsmParameterNameLoader implements ParameterNameLoader {
                     isStaticMethod = Modifier.isStatic(method.getModifiers());
                 }
 
-                return new MethodVisitor(Opcodes.ASM7) {
+                return new MethodVisitor(ASM_VERSION) {
                     // assume static method until we get a first parameter name
                     public void visitLocalVariable(String name, String description, String signature, Label start, Label end, int index) {
                         if (isStaticMethod) {

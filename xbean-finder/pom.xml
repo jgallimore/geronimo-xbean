@@ -25,7 +25,7 @@
     <parent>
         <artifactId>xbean</artifactId>
         <groupId>org.apache.xbean</groupId>
-        <version>4.15-SNAPSHOT</version>
+        <version>4.28-SNAPSHOT</version>
     </parent>
     <artifactId>xbean-finder</artifactId>
     <packaging>bundle</packaging>
@@ -79,10 +79,10 @@
                             org.apache.xbean.finder.*;version=${project.version};-noimport:=true
                         </Export-Package>
                         <Import-Package>
-                            org.objectweb.asm*;version="[7.0,8.0)",
+                            org.objectweb.asm*;version="[9.0,10.0)",
                             *
                         </Import-Package>
-                        <Private-Package>org.apache.xbean.asm7.original.commons</Private-Package>
+                        <Private-Package>org.apache.xbean.asm9.original.commons</Private-Package>
                         <_removeheaders>
                             Ignore-Package,Private-Package,Include-Resource,Embed-Dependency
                         </_removeheaders>
@@ -94,10 +94,14 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.0</version>
                 <configuration>
-                    <systemPropertyVariables>
-                        <jdk.util.jar.version>9</jdk.util.jar.version>
-                        <jdk.util.jar.enableMultiRelease>force</jdk.util.jar.enableMultiRelease>
-                    </systemPropertyVariables>
+                    <!--
+                    systemPropertyVariables are great but evaluated by surefire booter (even in v3)
+                    plus surefire uses a surefirebooter.jar so JVM will load the main class from a jarFile
+                    and already read these props before surefirebooter did its job (yes this is bad for surefire).
+                    -->
+                    <environmentVariables>
+                        <_JAVA_OPTIONS>-Djdk.util.jar.version=9 -Djdk.util.jar.enableMultiRelease=force</_JAVA_OPTIONS>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>

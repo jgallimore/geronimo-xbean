@@ -26,7 +26,7 @@
     <parent>
         <artifactId>xbean</artifactId>
         <groupId>org.apache.xbean</groupId>
-        <version>4.15-SNAPSHOT</version>
+        <version>4.28-SNAPSHOT</version>
     </parent>
 
     <artifactId>xbean-spring</artifactId>
@@ -132,9 +132,9 @@
                         <Import-Package>
                             com.thoughtworks.qdox*;resolution:=optional,
                             org.apache.tools.ant*;resolution:=optional,
-                            org.springframework.*;version="[2.5,4)",
-                            org.springframework.core;resolution:=optional;version="[2.5,4)",
-                            org.springframework.web*;resolution:=optional;version="[2.5,4)",
+                            org.springframework.*;version="[3,6)",
+                            org.springframework.core;resolution:=optional;version="[3,6)",
+                            org.springframework.web*;resolution:=optional;version="[3,6)",
                             *
                         </Import-Package>
                         <DynamicImport-Package>META-INF.services.org.apache.xbean.spring.*,META-INF.services.org.xbean.spring</DynamicImport-Package>
